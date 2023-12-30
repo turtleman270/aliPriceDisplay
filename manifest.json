@@ -3,14 +3,24 @@
   "manifest_version": 3,
   "version": "1.0.0",
   "description": "Displays the accurate price when on Aliexpress",
-  "permissions": [
-    "activeTab", 
-    "scripting"
-  ],
+  "icons":{
+    "16": "icon16.png",
+    "32": "icon32.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  },
+  "action": {
+    "default_icons":{
+        "16": "icon16.png",
+        "32": "icon32.png",
+        "48": "icon48.png",
+        "128": "icon128.png"
+    }
+  },
   "content_scripts": [
     {
         "matches": ["https://www.aliexpress.com/*"],
-        "js": ["/content.js"]
+        "js": ["/utils.js", "/content.js"]
     }
   ]
 }

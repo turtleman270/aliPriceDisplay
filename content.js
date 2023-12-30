@@ -1,24 +1,23 @@
-/*
-webpageUrl = 'https://www.aliexpress.com/item/1005005569750976.html'
-pageResponse = await fetch(webpageUrl)
-pageText = await pageResponse.text()
-actualPrice = pageText.match(/actCurrencyFormatPrice\":\".*?\"/)[0]
+updatingPricesGcp = false
+updatingPricesW = false
 
-*/
 
-async function updatePrices(){
+//works with https://www.aliexpress.com/gcp
+async function updatePricesGcp(mutations){
+    if(updatingPricesGcp){
+        return
+    }
+    updatingPricesGcp = true
+    console.log(mutations)
+    console.log("UPDATE PRICES PLEASE")
     products = document.querySelectorAll('.productContainer')
     for(product of products){
         if(product.getAttribute('updated')){
             continue;
         }
         try{
-            product.setAttribute('updated', 'true')
-            console.log(product)
             let webpageUrl = product.href.split('?')[0]
-            let pageResponse = await fetch(webpageUrl)
-            let pageText = await pageResponse.text()
-            let actualPrice = pageText.match(/actCurrencyFormatPrice\":\".*?\"/)[0].split('-')[1].slice(1,-1)
+            let actualPrice = await GET_PRICE_FROM_URL(webpageUrl)
             console.log(actualPrice)
             priceElement = product.children[1].children[0].children[0]
             while(priceElement.children.length>3){
@@ -26,43 +25,66 @@ async function updatePrices(){
             }
             priceElement.lastChild.innerHTML = actualPrice
             product.setAttribute('price', actualPrice)
-
+            product.setAttribute('updated', 'true')
+            console.log(product)
 
         }
         catch(exception){
             console.log(exception)
         }
     }
+    updatingPricesGcp = false
 }
 
-function waitForElm(selector) {
-    return new Promise(resolve => {
-        if (document.querySelector(selector)) {
-            return resolve(document.querySelector(selector));
+
+//works with https://www.aliexpress.com/w
+async function updatePricesW(mutations){
+    if(updatingPricesW){
+        return
+    }
+    updatingPricesW = true
+    console.log(mutations)
+    console.log("UPDATE PRICES PLEASE")
+    products = document.querySelectorAll('.search-card-item')
+    for(product of products){
+        if(product.getAttribute('updated')){
+            continue;
         }
+        try{
+            let webpageUrl = product.href.split('?')[0]
+            let actualPrice = await GET_PRICE_FROM_URL(webpageUrl)
+            console.log(actualPrice)
 
-        const observer = new MutationObserver(mutations => {
-            if (document.querySelector(selector)) {
-                observer.disconnect();
-                resolve(document.querySelector(selector));
+            priceElement = product.children[1].children[2].children[0]
+            while(priceElement.children.length>2){
+                priceElement.removeChild(priceElement.lastElementChild)
             }
-        });
+            priceElement.lastChild.innerHTML = actualPrice
+            product.setAttribute('price', actualPrice)
+            product.setAttribute('updated', 'true')
+            console.log(product)
 
-        observer.observe(document.body, {
-            childList: true,
-            subtree: true
-        });
+        }
+        catch(exception){
+            console.log(exception)
+        }
+    }
+    updatingPricesW = false
+}
+
+
+function handleMutation(mutations) {
+    //console.log(mutations)
+    mutations.forEach(async function (mutation) {
+      if (mutation.addedNodes.length > 0) {
+            console.log(mutation.addedNodes[0])
+            await updatePricesGcp()
+            await updatePricesW()
+      }
     });
 }
 
-
-async function first(){
-    target = await waitForElm('#aec-list-container')
-    let observer = new MutationObserver(updatePrices);
-    observer.observe(target, {childList: true, subtree: true});
-}
-
-
-first()
-
-
+const observer = new MutationObserver(handleMutation);
+const targetNode = document.body;
+const config = { childList: true, subtree: true };
+observer.observe(targetNode, config);
